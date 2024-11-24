@@ -1,0 +1,14 @@
+{
+  "name": "docuchain-truffle",
+  "version": "1.0.0",
+  "description": "Truffle configuration for DocuChain",
+  "main": "truffle-config.js",
+  "scripts": {
+    "compile": "truffle compile",
+    "migrate": "truffle migrate",
+    "test": "truffle test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

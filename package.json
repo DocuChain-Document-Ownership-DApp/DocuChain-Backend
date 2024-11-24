@@ -1,0 +1,29 @@
+{
+  "type": "module",
+  "name": "docuchain-backend",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "nodemon src/app.js",
+    "compile": "cd truffle && npm run compile",
+    "migrate": "cd truffle && npm run migrate",
+    "test": "cd truffle && npm run test"
+  },
+  "dependencies": {
+    "@truffle/contract": "^4.6.31",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "dotenv": "^16.4.5",
+    "express": "~4.16.1",
+    "ganache-cli": "^6.12.2",
+    "http-errors": "~1.6.3",
+    "kubo-rpc-client": "^3.0.1",
+    "mongoose": "^8.7.0",
+    "morgan": "~1.9.1",
+    "pug": "2.0.0-beta11",
+    "web3": "1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  }
+}
