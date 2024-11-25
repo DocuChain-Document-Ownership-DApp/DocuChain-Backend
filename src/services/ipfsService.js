@@ -19,10 +19,12 @@ const addToIPFS = async (content) => {
 const getFromIPFS = async (hash) => {
     try {
         const stream = ipfs.cat(hash);
-        let data = '';
+        const chunks = []; // Store the chunks of binary data
         for await (const chunk of stream) {
-            data += chunk.toString();
+            chunks.push(chunk); // Accumulate the chunks
         }
+        const buffer = Buffer.concat(chunks); // Combine chunks into a single Buffer
+        const data = buffer.toString('utf-8'); // Decode Buffer to a string using UTF-8
         return data;
     } catch (error) {
         console.error('IPFS error:', error);
