@@ -15,7 +15,7 @@ const issueDocument = async (issuerAddress, recipientAddress, ipfsHash) => {
     try {
         const instance = await DocumentManagement.deployed();
         const accounts = await getAccounts();
-        const result = await instance.issueDocument(recipientAddress, ipfsHash, { from: accounts[0] });
+        const result = await instance.issueDocument(recipientAddress, ipfsHash, { from: issuerAddress });
         return result.logs[0].args.docId;
     } catch (error) {
         console.error('Blockchain error:', error);
