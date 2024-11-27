@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import loggerService from "../services/loggerService.js";
 
 const connectDB = async () => {
     try {
@@ -6,9 +7,9 @@ const connectDB = async () => {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });
-        console.log('MongoDB connected successfully');
+        loggerService.info('MongoDB connected successfully');
     } catch (error) {
-        console.error('MongoDB connection error:', error);
+        loggerService.error('MongoDB connection error:', error);
         process.exit(1);
     }
 };

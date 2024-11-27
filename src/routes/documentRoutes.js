@@ -1,5 +1,5 @@
 import express from 'express';
-import { logger } from '../logger.js';
+import { loggerService } from '../services/loggerService.js';
 import {
     issueDocumentController,
     verifyDocumentController,
@@ -12,9 +12,9 @@ const router = express.Router();
 
 // Global request logging middleware
 router.use((req, res, next) => {
-    logger.info(`Incoming ${req.method} request to ${req.path}`);
-    logger.debug(`Request headers: ${JSON.stringify(req.headers)}`);
-    logger.debug(`Request body: ${JSON.stringify(req.body)}`);
+    loggerService.info(`Incoming ${req.method} request to ${req.path}`);
+    loggerService.debug(`Request headers: ${JSON.stringify(req.headers)}`);
+    loggerService.debug(`Request body: ${JSON.stringify(req.body)}`);
 
     // Log request start time for performance tracking
     req.requestStartTime = Date.now();
@@ -23,7 +23,7 @@ router.use((req, res, next) => {
     const originalEnd = res.end;
     res.end = function(chunk, encoding) {
         const responseTime = Date.now() - req.requestStartTime;
-        logger.info(`Request to ${req.path} completed in ${responseTime}ms`);
+        loggerService.info(`Request to ${req.path} completed in ${responseTime}ms`);
         originalEnd.call(this, chunk, encoding);
     };
 
@@ -33,8 +33,8 @@ router.use((req, res, next) => {
 // Document Issue Route with Comprehensive Logging
 router.post('/issue',
     (req, res, next) => {
-        logger.info('Executing document issue route');
-        logger.debug(`Issue request details: ${JSON.stringify({
+        loggerService.info('Executing document issue route');
+        loggerService.debug(`Issue request details: ${JSON.stringify({
             issuerAddress: req.body.issuerAddress,
             recipientAddress: req.body.recipientAddress,
             fileDetails: req.file ? {
@@ -52,7 +52,7 @@ router.post('/issue',
 // Document Verification Route
 router.get('/verify/:docId',
     (req, res, next) => {
-        logger.info(`Verify document route for DocID: ${req.params.docId}`);
+        loggerService.info(`Verify document route for DocID: ${req.params.docId}`);
         next();
     },
     verifyDocumentController
@@ -61,7 +61,7 @@ router.get('/verify/:docId',
 // Document Retrieval Route
 router.get('/:docId',
     (req, res, next) => {
-        logger.info(`Retrieve document route for DocID: ${req.params.docId}`);
+        loggerService.info(`Retrieve document route for DocID: ${req.params.docId}`);
         next();
     },
     getDocumentController
@@ -70,8 +70,8 @@ router.get('/:docId',
 // Ownership Transfer Route
 router.post('/transfer/:docId',
     (req, res, next) => {
-        logger.info(`Ownership transfer route for DocID: ${req.params.docId}`);
-        logger.debug(`Transfer request details: ${JSON.stringify({
+        loggerService.info(`Ownership transfer route for DocID: ${req.params.docId}`);
+        loggerService.debug(`Transfer request details: ${JSON.stringify({
             currentOwner: req.body.currentOwner,
             newOwner: req.body.newOwner
         })}`);
@@ -82,8 +82,8 @@ router.post('/transfer/:docId',
 
 // Error handling middleware
 router.use((err, req, res, next) => {
-    logger.error(`Unhandled error: ${err.message}`);
-    logger.error(`Error stack: ${err.stack}`);
+    loggerService.error(`Unhandled error: ${err.message}`);
+    loggerService.error(`Error stack: ${err.stack}`);
 
     res.status(500).json({
         error: 'Internal Server Error',

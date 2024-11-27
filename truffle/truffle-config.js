@@ -1,3 +1,5 @@
+import loggerService from "../src/services/loggerService.js";
+
 module.exports = {
     networks: {
         development: {
@@ -13,3 +15,6 @@ module.exports = {
     },
     contracts_build_directory: '../build/contracts',
 };
+
+// Optional: Log configuration details
+loggerService.info('Truffle configuration loaded');
