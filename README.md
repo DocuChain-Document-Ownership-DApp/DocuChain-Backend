@@ -119,7 +119,7 @@ DocuChain-Backend/
 
 1. Clone the repository
    ```bash
-   git clone https://github.com/yourusername/docuchain.git
+   git clone https://github.com/DocuChain-Document-Ownership-DApp/DocuChain-Backend.git
    ```
 
 2. Install dependencies
