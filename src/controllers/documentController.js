@@ -220,3 +220,82 @@ export const transferOwnershipController = async (req, res) => {
         });
     }
 };
+
+export const searchIssuedDocumentsController = async (req, res) => {
+    const startTime = Date.now();
+    loggerService.info('Starting document retrieval process');
+
+    try {
+        // Extract issuer and recipient IDs from request body
+        const { issuerAddress, recipientAddress } = req.body;
+
+        // Validate that at least one address is provided
+        if (!issuerAddress && !recipientAddress) {
+            loggerService.warn('No search criteria provided');
+            return res.status(400).json({
+                error: 'Please provide either issuer or recipient address'
+            });
+        }
+
+        // Construct query object based on provided parameters
+        const query = {};
+
+        // Add issuer condition if provided
+        if (issuerAddress) {
+            // Validate Ethereum address format
+            if (!/^0x[a-fA-F0-9]{40}$/.test(issuerAddress)) {
+                loggerService.error(`Invalid issuer address format: ${issuerAddress}`);
+                return res.status(400).json({ error: 'Invalid issuer address format' });
+            }
+            query.issuer = issuerAddress;
+        }
+
+        // Add recipient condition if provided
+        if (recipientAddress) {
+            // Validate Ethereum address format
+            if (!/^0x[a-fA-F0-9]{40}$/.test(recipientAddress)) {
+                loggerService.error(`Invalid recipient address format: ${recipientAddress}`);
+                return res.status(400).json({ error: 'Invalid recipient address format' });
+            }
+            query.recipient = recipientAddress;
+        }
+
+        loggerService.info('Searching for documents with query', {
+            issuerAddress: query.issuer,
+            recipientAddress: query.recipient
+        });
+
+        // Find documents matching the query, selecting only specific fields
+        const documents = await Document.find(query, {
+            docId: 1,
+            issuer: 1,
+            recipient: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            _id: 0  // Exclude MongoDB's internal _id
+        });
+
+        // Log search results
+        loggerService.info(`Found ${documents.length} documents matching the criteria`);
+
+        const processingTime = Date.now() - startTime;
+
+        // Return documents with processing metadata
+        res.json({
+            documents,
+            totalCount: documents.length,
+            processingTime,
+            searchCriteria: {
+                issuerAddress: query.issuer || 'Not specified',
+                recipientAddress: query.recipient || 'Not specified'
+            }
+        });
+    } catch (error) {
+        loggerService.error(`Document retrieval error: ${error.message}`);
+        loggerService.error(`Full error stack: ${error.stack}`);
+        res.status(500).json({
+            error: error.message,
+            details: error.stack
+        });
+    }
+};

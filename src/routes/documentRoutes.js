@@ -5,7 +5,8 @@ import {
     verifyDocumentController,
     getDocumentController,
     transferOwnershipController,
-    uploadMiddleware
+    uploadMiddleware,
+    searchIssuedDocumentsController
 } from '../controllers/documentController.js';
 
 const router = express.Router();
@@ -59,7 +60,7 @@ router.get('/verify/:docId',
 );
 
 // Document Retrieval Route
-router.get('/:docId',
+router.get('/get/:docId',
     (req, res, next) => {
         loggerService.info(`Retrieve document route for DocID: ${req.params.docId}`);
         next();
@@ -80,6 +81,19 @@ router.post('/transfer/:docId',
     transferOwnershipController
 );
 
+// Document Search Route
+router.get('/search',
+    (req, res, next) => {
+        loggerService.info('Executing document search route');
+        loggerService.debug(`Search request body: ${JSON.stringify({
+            issuerAddress: req.body.issuerAddress,
+            recipientAddress: req.body.recipientAddress
+        })}`);
+        next();
+    },
+    searchIssuedDocumentsController
+);
+
 // Error handling middleware
 router.use((err, req, res, next) => {
     loggerService.error(`Unhandled error: ${err.message}`);
@@ -91,5 +105,6 @@ router.use((err, req, res, next) => {
         timestamp: new Date().toISOString()
     });
 });
+
 
 export default router;
