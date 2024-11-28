@@ -44,8 +44,8 @@ const fileRotateTransport = new winston.transports.DailyRotateFile({
     )
 });
 
-// Create the logger
-export const logger = winston.createLogger({
+// Create the loggerService
+export const loggerService = winston.createLogger({
     level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
     levels,
     format: logFormat,
@@ -62,7 +62,7 @@ export const logger = winston.createLogger({
     ],
 });
 
-// Create error logger specifically for errors
+// Create error loggerService specifically for errors
 export const errorLogger = winston.createLogger({
     level: 'error',
     format: winston.format.combine(
@@ -79,7 +79,7 @@ export const errorLogger = winston.createLogger({
 
 // Development logging
 if (process.env.NODE_ENV !== 'production') {
-    logger.debug('Logging initialized at debug level');
+    loggerService.debug('Logging initialized at debug level');
 }
 
 // Error handling
@@ -92,4 +92,4 @@ process.on('unhandledRejection', (error) => {
     errorLogger.error('Unhandled Promise Rejection:', error);
 });
 
-export default logger;
+export default loggerService;

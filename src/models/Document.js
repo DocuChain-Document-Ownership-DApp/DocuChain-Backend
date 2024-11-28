@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { logger } from '../logger.js'
+import { loggerService } from '../services/loggerService.js'
 
 const DocumentSchema = new mongoose.Schema({
     docId: {
@@ -8,11 +8,11 @@ const DocumentSchema = new mongoose.Schema({
         unique: true,
         validate: {
             validator: function(v) {
-                logger.info(`Validating docId: ${v}`);
+                loggerService.info(`Validating docId: ${v}`);
                 return v && v.length > 0;
             },
             message: props => {
-                logger.warn(`Invalid docId: ${props.value}`);
+                loggerService.warn(`Invalid docId: ${props.value}`);
                 return 'DocId must not be empty';
             }
         }
@@ -22,11 +22,11 @@ const DocumentSchema = new mongoose.Schema({
         required: true,
         validate: {
             validator: function(v) {
-                logger.info(`Validating issuer address: ${v}`);
+                loggerService.info(`Validating issuer address: ${v}`);
                 return /^0x[a-fA-F0-9]{40}$/.test(v);
             },
             message: props => {
-                logger.warn(`Invalid issuer address: ${props.value}`);
+                loggerService.warn(`Invalid issuer address: ${props.value}`);
                 return 'Invalid Ethereum address';
             }
         }
@@ -36,11 +36,11 @@ const DocumentSchema = new mongoose.Schema({
         required: true,
         validate: {
             validator: function(v) {
-                logger.info(`Validating recipient address: ${v}`);
+                loggerService.info(`Validating recipient address: ${v}`);
                 return /^0x[a-fA-F0-9]{40}$/.test(v);
             },
             message: props => {
-                logger.warn(`Invalid recipient address: ${props.value}`);
+                loggerService.warn(`Invalid recipient address: ${props.value}`);
                 return 'Invalid Ethereum address';
             }
         }
@@ -62,11 +62,11 @@ const DocumentSchema = new mongoose.Schema({
         required: true,
         validate: {
             validator: function(v) {
-                logger.info(`Validating file size: ${v} bytes`);
+                loggerService.info(`Validating file size: ${v} bytes`);
                 return v > 0 && v <= 50 * 1024 * 1024; // 50MB limit
             },
             message: props => {
-                logger.warn(`Invalid file size: ${props.value} bytes`);
+                loggerService.warn(`Invalid file size: ${props.value} bytes`);
                 return 'File size must be between 0 and 50MB';
             }
         }
@@ -81,13 +81,13 @@ const DocumentSchema = new mongoose.Schema({
     hooks: {
         pre: {
             save: function(next) {
-                logger.info(`Attempting to save document: ${this.docId}`);
+                loggerService.info(`Attempting to save document: ${this.docId}`);
                 next();
             }
         },
         post: {
             save: function(doc) {
-                logger.info(`Document saved successfully: ${doc.docId}`);
+                loggerService.info(`Document saved successfully: ${doc.docId}`);
             }
         }
     }
@@ -95,15 +95,15 @@ const DocumentSchema = new mongoose.Schema({
 
 // Add a pre-save hook for additional logging
 DocumentSchema.pre('save', function(next) {
-    logger.info('Pre-save validation started');
-    logger.debug(`Document details: ${JSON.stringify(this.toObject())}`);
+    loggerService.info('Pre-save validation started');
+    loggerService.debug(`Document details: ${JSON.stringify(this.toObject())}`);
     next();
 });
 
 // Add a post-save hook for logging
 DocumentSchema.post('save', function(doc) {
-    logger.info(`Document saved with ID: ${doc.docId}`);
-    logger.debug(`Saved document details: ${JSON.stringify(doc.toObject())}`);
+    loggerService.info(`Document saved with ID: ${doc.docId}`);
+    loggerService.debug(`Saved document details: ${JSON.stringify(doc.toObject())}`);
 });
 
 export default mongoose.model('Document', DocumentSchema);
