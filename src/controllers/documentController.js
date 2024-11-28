@@ -127,7 +127,7 @@ export const getDocumentController = async (req, res) => {
     loggerService.info(`Retrieving document: ${req.params.docId}`);
 
     try {
-        const {docId} = req.params;
+        const {docId} = req.body;
 
         loggerService.info('Searching for document in database');
         const document = await Document.findOne({docId});
@@ -164,7 +164,7 @@ export const getDocumentController = async (req, res) => {
 // Similar logging pattern for other controllers...
 export const verifyDocumentController = async (req, res) => {
     try {
-        const {docId} = req.params;
+        const {docId} = req.body;
         loggerService.info(`Verify document route for DocID: ${docId}`);
 
         // Convert hex string to bytes array
@@ -191,8 +191,7 @@ export const verifyDocumentController = async (req, res) => {
 export const transferOwnershipController = async (req, res) => {
     loggerService.info('Starting ownership transfer process');
     try {
-        const {docId} = req.params;
-        const {currentOwner, newOwner} = req.body;
+        const {docId, currentOwner, newOwner} = req.body;
 
         loggerService.info(`Transfer details - DocID: ${docId}, Current Owner: ${currentOwner}, New Owner: ${newOwner}`);
 
