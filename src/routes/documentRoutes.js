@@ -51,27 +51,27 @@ router.post('/issue',
 );
 
 // Document Verification Route
-router.get('/verify/:docId',
+router.get('/verify',
     (req, res, next) => {
-        loggerService.info(`Verify document route for DocID: ${req.params.docId}`);
+        loggerService.info(`Verify document route for DocID: ${req.body.docId}`);
         next();
     },
     verifyDocumentController
 );
 
 // Document Retrieval Route
-router.get('/get/:docId',
+router.get('/get',
     (req, res, next) => {
-        loggerService.info(`Retrieve document route for DocID: ${req.params.docId}`);
+        loggerService.info(`Retrieve document route for DocID: ${req.body.docId}`);
         next();
     },
     getDocumentController
 );
 
 // Ownership Transfer Route
-router.post('/transfer/:docId',
+router.post('/transfer',
     (req, res, next) => {
-        loggerService.info(`Ownership transfer route for DocID: ${req.params.docId}`);
+        loggerService.info(`Ownership transfer route for DocID: ${req.body.docId}`);
         loggerService.debug(`Transfer request details: ${JSON.stringify({
             currentOwner: req.body.currentOwner,
             newOwner: req.body.newOwner
