@@ -8,6 +8,10 @@
     "migrate": "truffle migrate",
     "test": "truffle test"
   },
+  "dependencies": {
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^4.7.1"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC"

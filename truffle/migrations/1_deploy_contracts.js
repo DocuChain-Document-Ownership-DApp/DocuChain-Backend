@@ -1,4 +1,4 @@
-import loggerService from "../../src/services/loggerService.js";
+const loggerService = require('../truffleLogger.js');
 
 const DocumentManagement = artifacts.require("DocumentManagement");
 
