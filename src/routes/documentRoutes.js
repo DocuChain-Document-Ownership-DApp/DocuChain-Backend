@@ -1,5 +1,6 @@
 import express from 'express';
 import { loggerService } from '../services/loggerService.js';
+import { AuthMiddleware } from '../middleware/authMiddleware.js';
 import {
     issueDocumentController,
     verifyDocumentController,
@@ -10,6 +11,7 @@ import {
 } from '../controllers/documentController.js';
 
 const router = express.Router();
+const authMiddleware = new AuthMiddleware();
 
 // Global request logging middleware
 router.use((req, res, next) => {
@@ -30,6 +32,9 @@ router.use((req, res, next) => {
 
     next();
 });
+
+// Authentication middleware for all routes
+router.use(authMiddleware.authenticateRequest.bind(authMiddleware));
 
 // Document Issue Route with Comprehensive Logging
 router.post('/issue',
