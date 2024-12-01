@@ -76,9 +76,13 @@ export class AuthMiddleware {
                 throw new Error('Signature verification failed');
             }
 
-            // Invalidate used nonce
-            //user.currentNonce = null;
-            //await user.save();
+            //Invalidate used nonce
+            //userModel.authentication.currentNonce = null;
+            await userModel.updateOne(
+                { walletAddress: walletAddress }, // Query to find the document
+                { $set: { 'authentication.currentNonce': null } } // Update operation
+              );
+            
 
             // Generate JWT tokens
             return this.generateTokens(walletAddress);
