@@ -4,8 +4,7 @@ import {ethers} from 'ethers';
 import {NonceService} from '../services/nonceService.js';
 import {loggerService} from '../services/loggerService.js';
 import {userModel} from '../models/userModel.js';
-import { isAddress, verifyMessage } from 'ethers';
-
+import {isAddress, verifyMessage} from 'ethers';
 
 
 export class AuthMiddleware {
@@ -24,10 +23,9 @@ export class AuthMiddleware {
         const nonce = this.nonceService.generateNonce(walletAddress);
 
 
-
         // // Optional: Store nonce in database for verification
         await userModel.findOneAndUpdate(
-            { walletAddress: walletAddress },
+            {walletAddress: walletAddress},
             {
                 $set: {
                     walletAddress, // Ensure wallet address is correctly set
@@ -46,7 +44,7 @@ export class AuthMiddleware {
                     updatedAt: new Date() // Ensure the updated time is refreshed
                 }
             },
-            { upsert: true, new: true } // Create if not exists, and return updated document
+            {upsert: true, new: true} // Create if not exists, and return updated document
         );
 
 
@@ -77,12 +75,10 @@ export class AuthMiddleware {
             }
 
             //Invalidate used nonce
-            //userModel.authentication.currentNonce = null;
             await userModel.updateOne(
-                { walletAddress: walletAddress }, // Query to find the document
-                { $set: { 'authentication.currentNonce': null } } // Update operation
-              );
-            
+                {walletAddress: walletAddress}, // Query to find the document
+                {$set: {'authentication.currentNonce': null}} // Update operation
+            );
 
             // Generate JWT tokens
             return this.generateTokens(walletAddress);
