@@ -50,14 +50,18 @@ DocuChain-Backend/
 ### 1. Issue Document
 - **Endpoint**: `POST http://localhost:3000/api/documents/issue`
 - **Purpose**: Upload and register a new document on blockchain
+- **Request Headers**:
+   - `Authorization`: Bearer {access_token}
 - **Request Body (Form-Data)**:
-    - `document`: File to be uploaded
-    - `issuerAddress`: Ethereum address of document issuer
-    - `recipientAddress`: Ethereum address of document recipient
+   - `document`: File to be uploaded
+   - `issuerAddress`: Ethereum address of document issuer
+   - `recipientAddress`: Ethereum address of document recipient
 
 ### 2. Get Document
 - **Endpoint**: `POST http://localhost:3000/api/documents/get`
 - **Purpose**: Retrieve a specific document
+- **Request Headers**:
+   - `Authorization`: Bearer {access_token}
 - **Request Body**:
   ```json
   {
@@ -68,6 +72,8 @@ DocuChain-Backend/
 ### 3. Verify Document
 - **Endpoint**: `POST http://localhost:3000/api/documents/verify`
 - **Purpose**: Validate document authenticity
+- **Request Headers**:
+   - `Authorization`: Bearer {access_token}
 - **Request Body**:
   ```json
   {
@@ -78,6 +84,8 @@ DocuChain-Backend/
 ### 4. Transfer Document Ownership
 - **Endpoint**: `POST http://localhost:3000/api/documents/transfer`
 - **Purpose**: Transfer document ownership between addresses
+- **Request Headers**:
+   - `Authorization`: Bearer {access_token}
 - **Request Body**:
   ```json
   {
@@ -90,6 +98,8 @@ DocuChain-Backend/
 ### 5. Search Documents
 - **Endpoint**: `POST http://localhost:3000/api/documents/search`
 - **Purpose**: Search documents by issuer or recipient
+- **Request Headers**:
+   - `Authorization`: Bearer {access_token}
 - **Request Body**:
   ```json
   {
@@ -97,6 +107,61 @@ DocuChain-Backend/
     "recipientAddress": "Ethereum address of document recipient"
   }
   ```
+
+## Authentication Flow
+### 1. Generate Nonce Endpoint
+- **Endpoint:** `http://localhost:3000/auth/generate-nonce`
+- **HTTP Method:** POST
+- **Purpose:** Generate a unique nonce for signature challenge
+#### Request
+```json
+{
+    "walletAddress": "0xUserWalletAddress"
+}
+```
+#### Response
+```json
+{
+    "nonce": "0xWalletAddress:Timestamp:RandomString"
+}
+```
+
+### 2. Verify Signature Endpoint
+- **Endpoint:** `http://localhost:3000/auth/verify-signature`
+- **HTTP Method:** POST
+- **Purpose:** Verify user's cryptographic signature and issue authentication tokens
+#### Request Body
+```json
+{
+    "walletAddress": "0xUserWalletAddress",
+    "signature": "0xSignatureGeneratedByWallet",
+    "nonce": "0xGeneratedNonceFromPreviousStep"
+}
+```
+#### Response
+```json
+{
+    "accessToken": "JWT_ACCESS_TOKEN",
+    "refreshToken": "JWT_REFRESH_TOKEN"
+}
+```
+
+### 3. Refresh Token Endpoint
+- **Endpoint:** `http://localhost:3000/auth/refresh-token`
+- **HTTP Method:** POST
+- **Purpose:** Generate a new access token using a valid refresh token
+#### Request Body
+```json
+{
+    "refreshToken": "EXISTING_REFRESH_TOKEN"
+}
+```
+#### Response
+```json
+{
+    "accessToken": "NEW_JWT_ACCESS_TOKEN"
+}
+```
 
 ## 🔐 Security Features
 
