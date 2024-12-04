@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import loggerService from '/loggerService.js';
+import loggerService from './loggerService.js';
 
 export class NonceService {
     // Generate cryptographically secure nonce
