@@ -5,6 +5,7 @@ import {NonceService} from '../services/nonceService.js';
 import {loggerService} from '../services/loggerService.js';
 import {userModel} from '../models/userModel.js';
 import {isAddress, verifyMessage} from 'ethers';
+import {canAccessDocument} from "../services/blockchainService.js";
 
 
 export class AuthMiddleware {
@@ -24,9 +25,7 @@ export class AuthMiddleware {
 
 
         // // Optional: Store nonce in database for verification
-        await userModel.findOneAndUpdate(
-            {walletAddress: walletAddress},
-            {
+        await userModel.findOneAndUpdate({walletAddress: walletAddress}, {
                 $set: {
                     walletAddress, // Ensure wallet address is correctly set
                     "authentication.currentNonce": nonce,
@@ -43,8 +42,7 @@ export class AuthMiddleware {
                     status: "active", // Maintain status
                     updatedAt: new Date() // Ensure the updated time is refreshed
                 }
-            },
-            {upsert: true, new: true} // Create if not exists, and return updated document
+            }, {upsert: true, new: true} // Create if not exists, and return updated document
         );
 
 
@@ -75,8 +73,7 @@ export class AuthMiddleware {
             }
 
             //Invalidate used nonce
-            await userModel.updateOne(
-                {walletAddress: walletAddress}, // Query to find the document
+            await userModel.updateOne({walletAddress: walletAddress}, // Query to find the document
                 {$set: {'authentication.currentNonce': null}} // Update operation
             );
 
@@ -94,18 +91,10 @@ export class AuthMiddleware {
         const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
 
         // Access token (1 hour)
-        const accessToken = jwt.sign(
-            {walletAddress, type: 'access'},
-            accessTokenSecret,
-            {expiresIn: '1h'}
-        );
+        const accessToken = jwt.sign({walletAddress, type: 'access'}, accessTokenSecret, {expiresIn: '1h'});
         loggerService.info(`accessToken: ${accessToken}`);
         // Refresh token (30 days)
-        const refreshToken = jwt.sign(
-            {walletAddress, type: 'refresh'},
-            refreshTokenSecret,
-            {expiresIn: '30d'}
-        );
+        const refreshToken = jwt.sign({walletAddress, type: 'refresh'}, refreshTokenSecret, {expiresIn: '30d'});
 
         return {accessToken, refreshToken};
     }
@@ -156,6 +145,34 @@ export class AuthMiddleware {
 
             return res.status(401).json({error: 'Authentication failed'});
         }
+    }
+
+    verifyDocumentAccess(req, res, next) {
+        return async (req, res, next) => {
+            try {
+                const docId = req.body.docId;
+                const userAddress = req.user.walletAddress;
+
+                if (!docId) {
+                    return res.status(400).json({error: 'Document ID is required'});
+                }
+
+                const hasAccess = await canAccessDocument(docId, userAddress);
+
+                if (!hasAccess) {
+                    return res.status(403).json({
+                        error: 'Access denied', message: 'You do not have permission to access this document'
+                    });
+                }
+
+                next();
+            } catch (error) {
+                loggerService.error(`Document access verification failed: ${error.message}`);
+                return res.status(500).json({
+                    error: 'Access verification failed', message: 'Unable to verify document access'
+                });
+            }
+        };
     }
 
     // Refresh token mechanism
