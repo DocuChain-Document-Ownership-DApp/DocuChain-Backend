@@ -1,6 +1,6 @@
 import express from 'express';
-import { loggerService } from '../services/loggerService.js';
-import { AuthMiddleware } from '../middleware/authMiddleware.js';
+import {loggerService} from '../services/loggerService.js';
+import {AuthMiddleware} from '../middleware/authMiddleware.js';
 import {
     issueDocumentController,
     verifyDocumentController,
@@ -24,7 +24,7 @@ router.use((req, res, next) => {
 
     // Capture original end and json methods to log response details
     const originalEnd = res.end;
-    res.end = function(chunk, encoding) {
+    res.end = function (chunk, encoding) {
         const responseTime = Date.now() - req.requestStartTime;
         loggerService.info(`Request to ${req.path} completed in ${responseTime}ms`);
         originalEnd.call(this, chunk, encoding);
@@ -64,13 +64,14 @@ router.get('/verify',
     verifyDocumentController
 );
 
-// Document Retrieval Route
-router.get('/get',
+router.get(
+    '/get',
+    authMiddleware.verifyDocumentAccess().bind(authMiddleware), // Authorization middleware
     (req, res, next) => {
         loggerService.info(`Retrieve document route for DocID: ${req.body.docId}`);
         next();
     },
-    getDocumentController
+    getDocumentController // Document retrieval controller
 );
 
 // Ownership Transfer Route

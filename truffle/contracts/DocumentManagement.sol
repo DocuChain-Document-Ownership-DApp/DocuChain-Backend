@@ -32,4 +32,9 @@ contract DocumentManagement {
         documents[_docId].recipient = _newOwner;
         emit OwnershipTransferred(_docId, previousOwner, _newOwner);
     }
+
+    function canAccessDocument(bytes32 _docId, address _user) public view returns (bool) {
+        Document memory doc = documents[_docId];
+        return (doc.issuer == _user || doc.recipient == _user);
+    }
 }
