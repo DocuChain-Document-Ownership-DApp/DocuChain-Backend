@@ -54,7 +54,6 @@ DocuChain-Backend/
    - `Authorization`: Bearer {access_token}
 - **Request Body (Form-Data)**:
    - `document`: File to be uploaded
-   - `issuerAddress`: Ethereum address of document issuer
    - `recipientAddress`: Ethereum address of document recipient
 
 ### 2. Get Document
@@ -90,7 +89,6 @@ DocuChain-Backend/
   ```json
   {
     "docId": "unique-document-identifier",
-    "currentOwner": "Ethereum address of document's current owner",
     "newOwner": "Ethereum address of document's current owner"
   }
   ```
@@ -103,7 +101,6 @@ DocuChain-Backend/
 - **Request Body**:
   ```json
   {
-    "issuerAddress": "Ethereum address of document issuer",
     "recipientAddress": "Ethereum address of document recipient"
   }
   ```
