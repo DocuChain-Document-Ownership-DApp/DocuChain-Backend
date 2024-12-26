@@ -63,7 +63,8 @@ export const issueDocumentController = async (req, res) => {
         }
 
         // Extract addresses with validation
-        const {issuerAddress, recipientAddress} = req.body;
+        const issuerAddress = req.user.walletAddress;
+        const {recipientAddress} = req.body;
         if (!issuerAddress || !recipientAddress) {
             loggerService.error('Missing issuer or recipient address');
             return res.status(400).json({error: 'Issuer and recipient addresses are required'});
@@ -191,7 +192,8 @@ export const verifyDocumentController = async (req, res) => {
 export const transferOwnershipController = async (req, res) => {
     loggerService.info('Starting ownership transfer process');
     try {
-        const {docId, currentOwner, newOwner} = req.body;
+        const currentOwner = req.user.walletAddress;
+        const {docId, newOwner} = req.body;
 
         loggerService.info(`Transfer details - DocID: ${docId}, Current Owner: ${currentOwner}, New Owner: ${newOwner}`);
 
@@ -226,7 +228,8 @@ export const searchIssuedDocumentsController = async (req, res) => {
 
     try {
         // Extract issuer and recipient IDs from request body
-        const { issuerAddress, recipientAddress } = req.body;
+        const issuerAddress = req.user.walletAddress;
+        const {recipientAddress} = req.body;
 
         // Validate that at least one address is provided
         if (!issuerAddress && !recipientAddress) {
@@ -244,7 +247,7 @@ export const searchIssuedDocumentsController = async (req, res) => {
             // Validate Ethereum address format
             if (!/^0x[a-fA-F0-9]{40}$/.test(issuerAddress)) {
                 loggerService.error(`Invalid issuer address format: ${issuerAddress}`);
-                return res.status(400).json({ error: 'Invalid issuer address format' });
+                return res.status(400).json({error: 'Invalid issuer address format'});
             }
             query.issuer = issuerAddress;
         }
@@ -254,7 +257,7 @@ export const searchIssuedDocumentsController = async (req, res) => {
             // Validate Ethereum address format
             if (!/^0x[a-fA-F0-9]{40}$/.test(recipientAddress)) {
                 loggerService.error(`Invalid recipient address format: ${recipientAddress}`);
-                return res.status(400).json({ error: 'Invalid recipient address format' });
+                return res.status(400).json({error: 'Invalid recipient address format'});
             }
             query.recipient = recipientAddress;
         }
