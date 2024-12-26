@@ -1,5 +1,4 @@
 import multer from 'multer';
-import path from 'path';
 import {loggerService} from '../services/loggerService.js';
 import Document from '../models/Document.js';
 import {addToIPFS, getFromIPFS} from '../services/ipfsService.js';
@@ -8,7 +7,6 @@ import {
     verifyDocument,
     transferOwnership
 } from '../services/blockchainService.js';
-import crypto from 'crypto';
 import {ethers} from 'ethers';
 
 // Detailed Multer configuration
@@ -209,8 +207,7 @@ export const transferOwnershipController = async (req, res) => {
         loggerService.info(`Database update result: ${JSON.stringify(updateResult)}`);
 
         res.json({
-            message: 'Ownership transferred successfully',
-            updatedDocument: updateResult
+            message: 'Ownership transferred successfully'
         });
     } catch (error) {
         loggerService.error(`Ownership transfer error: ${error.message}`);
