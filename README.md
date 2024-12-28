@@ -106,7 +106,36 @@ DocuChain-Backend/
   ```
 
 ## Authentication Flow
-### 1. Generate Nonce Endpoint
+
+### 1. Signup Endpoint
+- **Endpoint:** `http://localhost:3000/auth/signup`
+- **HTTP Method:** POST
+- **Content-Type:** multipart/form-data
+- **Purpose:** Creating New Account on platform
+#### Request
+```
+{
+  walletAddress: string,   // Ethereum wallet address
+  name: string,           // User's full name
+  email: string,          // Valid email address
+  phone: string,          // Phone number with country code
+  uid: string,           // Unique identifier
+  dob: string,           // Date of birth (MM/DD/YYYY)
+  role: string,          // User role (default: 'user')
+  photo: File,           // User photo (JPEG/PNG)
+  idDocument: File       // Identity document (PDF)
+}
+```
+#### Response
+```json
+{
+  "success": true,
+  "walletAddress": "0x092Afb01ADFf2ca70860A7441AB12dae96b75Bae",
+  "processingTime": 92
+}
+```
+
+### 2. Generate Nonce Endpoint
 - **Endpoint:** `http://localhost:3000/auth/generate-nonce`
 - **HTTP Method:** POST
 - **Purpose:** Generate a unique nonce for signature challenge
@@ -123,7 +152,7 @@ DocuChain-Backend/
 }
 ```
 
-### 2. Verify Signature Endpoint
+### 3. Verify Signature Endpoint
 - **Endpoint:** `http://localhost:3000/auth/verify-signature`
 - **HTTP Method:** POST
 - **Purpose:** Verify user's cryptographic signature and issue authentication tokens
@@ -143,7 +172,7 @@ DocuChain-Backend/
 }
 ```
 
-### 3. Refresh Token Endpoint
+### 4. Refresh Token Endpoint
 - **Endpoint:** `http://localhost:3000/auth/refresh-token`
 - **HTTP Method:** POST
 - **Purpose:** Generate a new access token using a valid refresh token
