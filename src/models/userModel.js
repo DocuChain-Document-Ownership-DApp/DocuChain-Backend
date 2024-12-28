@@ -14,7 +14,7 @@ const UserSchema = new mongoose.Schema(
                 validator: function (v) {
                     // Validate Ethereum address format
                     try {
-                        return ethers.utils.isAddress(v);
+                        return ethers.isAddress(v);
                     } catch (error) {
                         loggerService.warn(`Invalid wallet address format: ${v}`);
                         return false;
@@ -44,6 +44,50 @@ const UserSchema = new mongoose.Schema(
                         return !v || /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(v);
                     },
                     message: (props) => `Invalid email format: ${props.value}`,
+                },
+            },
+            phone: {
+                type: String,
+                trim: true,
+                validate: {
+                    validator: function (v) {
+                        // Basic phone number validation
+                        return !v || /^[+\d]?(?:[\d-.\s()]*)$/.test(v);
+                    },
+                    message: (props) => `Invalid phone number: ${props.value}`,
+                },
+            },
+            uid: {
+                uid: {
+                    type: String,
+                    required: true,
+                    trim: true,
+                },
+                ipfsHash: {
+                    type: String,
+                    required: true,
+                    trim: true,
+                },
+            },
+            dob: {
+                type: Date,
+                validate: {
+                    validator: function (v) {
+                        // Ensure DOB is a past date
+                        return !v || v < new Date();
+                    },
+                    message: 'Date of birth must be a past date',
+                },
+            },
+            photo: {
+                ipfsHash: {
+                    type: String,
+                    trim: true,
+                    required: true,
+                },
+                uploadedAt: {
+                    type: Date,
+                    default: Date.now,
                 },
             },
         },

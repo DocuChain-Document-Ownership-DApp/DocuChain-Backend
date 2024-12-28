@@ -20,37 +20,32 @@ export class AuthMiddleware {
             throw new Error('Invalid Ethereum address');
         }
 
-        // Generate and store nonce
+        // Check if user exists
+        const existingUser = await userModel.findOne({ walletAddress });
+        if (!existingUser) {
+            throw new Error('Please create an account first');
+        }
+
+        // Generate nonce only if user exists
         const nonce = this.nonceService.generateNonce(walletAddress);
 
-
-        // // Optional: Store nonce in database for verification
-        await userModel.findOneAndUpdate({walletAddress: walletAddress}, {
+        // Update nonce for existing user
+        await userModel.findOneAndUpdate(
+            { walletAddress },
+            {
                 $set: {
-                    walletAddress, // Ensure wallet address is correctly set
                     "authentication.currentNonce": nonce,
-                    "authentication.lastNonceGeneratedAt": new Date(),
-                    "authentication.authAttempts": 0, // Reset auth attempts if needed
-                    "authentication.lockedUntil": null, // Reset lock status
-
-                    "compliance.kycVerified": false, // Maintain KYC status
-                    "compliance.roles": ["user"], // Default role
-
-                    "security.lastLogin": null, // Optional if not updated
-                    "security.loginHistory": [], // Optional if not updated
-
-                    status: "active", // Maintain status
-                    updatedAt: new Date() // Ensure the updated time is refreshed
+                    "authentication.lastNonceGeneratedAt": new Date()
                 }
-            }, {upsert: true, new: true} // Create if not exists, and return updated document
+            },
+            { new: true }
         );
-
 
         return nonce;
     }
 
     // Verify Metamask signature
-    async verifySignature(walletAddress, signature, message) {
+    async verifySignature(walletAddress, signature, message, ipAddress) {
         try {
             // Retrieve stored nonce for this wallet
             const user = await userModel.findOne({walletAddress});
@@ -69,12 +64,27 @@ export class AuthMiddleware {
 
             // Ensure signed message is from the claimed wallet
             if (signerAddress.toLowerCase() !== walletAddress.toLowerCase()) {
+                await this.incrementAuthAttempts(walletAddress);
                 throw new Error('Signature verification failed');
             }
 
+
             //Invalidate used nonce
-            await userModel.updateOne({walletAddress: walletAddress}, // Query to find the document
-                {$set: {'authentication.currentNonce': null}} // Update operation
+            await userModel.updateOne(
+                { walletAddress: walletAddress }, // Query to find the document
+                {
+                    $set: {
+                        'authentication.currentNonce': null, // Reset nonce
+                        'authentication.authAttempts': 0, // Reset authentication attempts
+                        'security.lastLogin': new Date(), // Register current datetime in lastLogin
+                    },
+                    $push: {
+                        'security.loginHistory': {
+                            $each: [{ timestamp: new Date(), ipAddress: ipAddress }], // Add new login record
+                            $slice: -15, // Retain only the last 15 entries
+                        },
+                    },
+                }
             );
 
             // Generate JWT tokens
@@ -82,6 +92,49 @@ export class AuthMiddleware {
         } catch (error) {
             loggerService.error(`Signature verification error: ${error.message}`);
             throw error;
+        }
+    }
+
+    async incrementAuthAttempts(walletAddress) {
+        try {
+            // Define the maximum allowed attempts and lockout duration
+            const MAX_ATTEMPTS = 5;
+            const LOCK_DURATION_MINUTES = 15;
+
+            // Fetch the user document
+            const user = await userModel.findOne({ walletAddress });
+
+            if (!user) {
+                throw new Error('User not found');
+            }
+
+            // Increment authAttempts
+            const updatedAttempts = user.authentication.authAttempts + 1;
+
+            // Check if lockout is needed
+            const updates = {
+                'authentication.authAttempts': updatedAttempts,
+            };
+
+            if (updatedAttempts >= MAX_ATTEMPTS) {
+                updates['authentication.lockedUntil'] = new Date(Date.now() + LOCK_DURATION_MINUTES * 60 * 1000); // Lock for 15 minutes
+            }
+
+            // Update the user document
+            await userModel.updateOne(
+                { walletAddress },
+                { $set: updates }
+            );
+
+            return {
+                success: true,
+                message: updatedAttempts >= MAX_ATTEMPTS
+                    ? 'Account locked due to too many authentication attempts'
+                    : 'Authentication attempts incremented',
+            };
+        } catch (error) {
+            console.error('Error incrementing auth attempts:', error.message);
+            return { success: false, message: error.message };
         }
     }
 

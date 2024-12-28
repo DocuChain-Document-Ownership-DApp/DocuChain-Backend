@@ -9,38 +9,6 @@ import {
 } from '../services/blockchainService.js';
 import {ethers} from 'ethers';
 
-// Detailed Multer configuration
-const storage = multer.memoryStorage();
-const upload = multer({
-    storage: storage,
-    limits: {
-        fileSize: 50 * 1024 * 1024 // 50MB file size limit
-    },
-    fileFilter: (req, file, cb) => {
-        loggerService.info(`File upload filter: ${file.originalname}`);
-        loggerService.debug(`File details: ${JSON.stringify({
-            originalname: file.originalname,
-            mimetype: file.mimetype
-        })}`);
-        cb(null, true);
-    }
-});
-
-export const uploadMiddleware = (req, res, next) => {
-    loggerService.info('Initiating file upload middleware');
-    upload.single('document')(req, res, (err) => {
-        if (err instanceof multer.MulterError) {
-            loggerService.error(`Multer upload error: ${err.message}`);
-            return res.status(400).json({error: err.message});
-        } else if (err) {
-            loggerService.error(`Unknown upload error: ${err.message}`);
-            return res.status(500).json({error: err.message});
-        }
-        loggerService.info('File upload middleware completed successfully');
-        next();
-    });
-};
-
 export const issueDocumentController = async (req, res) => {
     const startTime = Date.now();
     loggerService.info('Starting document issuance process');
