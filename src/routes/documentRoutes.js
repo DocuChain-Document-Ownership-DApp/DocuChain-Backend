@@ -1,12 +1,12 @@
 import express from 'express';
 import {loggerService} from '../services/loggerService.js';
 import {AuthMiddleware} from '../middleware/authMiddleware.js';
+import {uploadMiddlewares} from "../middleware/uploadMiddleware.js";
 import {
     issueDocumentController,
     verifyDocumentController,
     getDocumentController,
     transferOwnershipController,
-    uploadMiddleware,
     searchIssuedDocumentsController
 } from '../controllers/documentController.js';
 
@@ -51,7 +51,7 @@ router.post('/issue',
         })}`);
         next();
     },
-    uploadMiddleware,
+    uploadMiddlewares.singleDocument,
     issueDocumentController
 );
 

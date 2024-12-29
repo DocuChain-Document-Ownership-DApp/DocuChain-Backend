@@ -1,6 +1,7 @@
 import express from 'express';
-import { authController } from '../controllers/authController.js';
-import { loggerService } from '../services/loggerService.js';
+import {authController} from '../controllers/authController.js';
+import {loggerService} from '../services/loggerService.js';
+import {uploadMiddlewares} from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
@@ -15,7 +16,7 @@ router.use((req, res, next) => {
 
     // Capture original end and json methods to log response details
     const originalEnd = res.end;
-    res.end = function(chunk, encoding) {
+    res.end = function (chunk, encoding) {
         const responseTime = Date.now() - req.requestStartTime;
         loggerService.info(`Auth request to ${req.path} completed in ${responseTime}ms`);
         originalEnd.call(this, chunk, encoding);
@@ -23,6 +24,8 @@ router.use((req, res, next) => {
 
     next();
 });
+
+router.post('/signup',uploadMiddlewares.userRegistration, authController.signup);
 
 // Generate nonce route
 router.post('/generate-nonce', authController.generateNonce);
