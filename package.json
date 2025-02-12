@@ -12,8 +12,9 @@
   "dependencies": {
     "@truffle/contract": "^4.6.31",
     "cookie-parser": "~1.4.4",
+    "cors": "^2.8.5",
     "debug": "~2.6.9",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.4.7",
     "ethers": "^6.13.4",
     "express": "~4.16.1",
     "ganache-cli": "^6.12.2",

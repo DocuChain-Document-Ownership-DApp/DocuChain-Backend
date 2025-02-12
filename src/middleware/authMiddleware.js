@@ -57,10 +57,16 @@ export class AuthMiddleware {
             if (!this.nonceService.validateNonce(user.authentication.currentNonce)) {
                 throw new Error('Nonce has expired');
             }
+            loggerService.info('walletAddres',walletAddress);
+            loggerService.info('ipadd', ipAddress);
+            loggerService.info('message',message);
+            loggerService.info('signature',signature);
 
             // Recover signer address
             const signerAddress = verifyMessage(message, signature);
             loggerService.info(`walletID: ${walletAddress}, signerID: ${signerAddress}`);
+
+            loggerService.info(signerAddress.toLowerCase(),walletAddress.toLowerCase())
 
             // Ensure signed message is from the claimed wallet
             if (signerAddress.toLowerCase() !== walletAddress.toLowerCase()) {
