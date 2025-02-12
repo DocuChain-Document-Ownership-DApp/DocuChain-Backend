@@ -113,12 +113,12 @@ export const authController = {
 
     // Verify signature and authenticate
     async verifySignature(req, res) {
-        const { walletAddress, signature, message } = req.body;
+        const { walletAddress, signature, nonce } = req.body;
         const ipAddress=req.headers['x-forwarded-for'] || req.socket.remoteAddress || null
 
         loggerService.info(`Received request to verify signature for wallet: ${walletAddress}`);
         try {
-            const tokens = await authMiddleware.verifySignature(walletAddress, signature, message, ipAddress);
+            const tokens = await authMiddleware.verifySignature(walletAddress, signature, nonce, ipAddress);
             loggerService.info(`Signature verified successfully for wallet: ${walletAddress}`);
             loggerService.debug(`Tokens issued: ${JSON.stringify(tokens)}`);
             res.json(tokens);

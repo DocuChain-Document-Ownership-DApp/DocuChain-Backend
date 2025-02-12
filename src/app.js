@@ -4,6 +4,7 @@ import connectDB from './config/database.js';
 import documentRoutes from './routes/documentRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import loggerService from "./services/loggerService.js";
+import cors from 'cors';
 
 loggerService.info('Starting application...');
 
@@ -19,6 +20,14 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     next();
 });
+
+const corsOptions = {
+    origin: ['http://localhost:5173'], // Add your frontend URL
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+    credentials: true // Enable if you're using cookies/sessions
+};
+app.use(cors(corsOptions));
 
 app.use(express.json());
 loggerService.info('JSON middleware configured');
