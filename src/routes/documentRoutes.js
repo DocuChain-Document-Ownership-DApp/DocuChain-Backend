@@ -88,7 +88,7 @@ router.post('/transfer',
 );
 
 // Document Search Route
-router.get('/search',
+router.post('/search',
     (req, res, next) => {
         loggerService.info('Executing document search route');
         loggerService.debug(`Search request body: ${JSON.stringify({
