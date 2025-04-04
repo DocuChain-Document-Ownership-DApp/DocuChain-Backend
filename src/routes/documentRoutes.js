@@ -64,7 +64,7 @@ router.get('/verify',
     verifyDocumentController
 );
 
-router.get(
+router.post(
     '/get',
     authMiddleware.verifyDocumentAccess().bind(authMiddleware), // Authorization middleware
     (req, res, next) => {
