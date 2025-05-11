@@ -7,7 +7,8 @@ import {
     verifyDocumentController,
     getDocumentController,
     transferOwnershipController,
-    searchIssuedDocumentsController
+    searchIssuedDocumentsController,
+    getDocumentClassesIndexController
 } from '../controllers/documentController.js';
 
 const router = express.Router();
@@ -98,6 +99,17 @@ router.post('/search',
         next();
     },
     searchIssuedDocumentsController
+);
+
+router.get('/document-classes',
+    (req, res, next) => {
+        loggerService.info('Executing document classes index route');
+        loggerService.debug(`Request query parameters: ${JSON.stringify({
+            sectors: req.query.sectors
+        })}`);
+        next();
+    },
+    getDocumentClassesIndexController
 );
 
 // Error handling middleware

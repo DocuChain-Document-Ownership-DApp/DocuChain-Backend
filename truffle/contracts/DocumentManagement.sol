@@ -6,19 +6,26 @@ contract DocumentManagement {
         address issuer;
         address recipient;
         string ipfsHash;
+        string docCode;    // New field for document type code
         uint256 timestamp;
         bool isVerified;
     }
 
     mapping(bytes32 => Document) public documents;
 
-    event DocumentIssued(bytes32 indexed docId, address indexed issuer, address indexed recipient, string ipfsHash);
+    event DocumentIssued(
+        bytes32 indexed docId,
+        address indexed issuer,
+        address indexed recipient,
+        string ipfsHash,
+        string docCode
+    );
     event OwnershipTransferred(bytes32 indexed docId, address indexed previousOwner, address indexed newOwner);
 
-    function issueDocument(address _recipient, string memory _ipfsHash) public returns (bytes32) {
-        bytes32 docId = keccak256(abi.encodePacked(_ipfsHash, block.timestamp));
-        documents[docId] = Document(msg.sender, _recipient, _ipfsHash, block.timestamp, true);
-        emit DocumentIssued(docId, msg.sender, _recipient, _ipfsHash);
+    function issueDocument(address _recipient, string memory _ipfsHash, string memory _docCode) public returns (bytes32) {
+        bytes32 docId = keccak256(abi.encodePacked(_ipfsHash, _docCode, block.timestamp));
+        documents[docId] = Document(msg.sender, _recipient, _ipfsHash, _docCode, block.timestamp, true);
+        emit DocumentIssued(docId, msg.sender, _recipient, _ipfsHash, _docCode);
         return docId;
     }
 
@@ -36,5 +43,9 @@ contract DocumentManagement {
     function canAccessDocument(bytes32 _docId, address _user) public view returns (bool) {
         Document memory doc = documents[_docId];
         return (doc.issuer == _user || doc.recipient == _user);
+    }
+
+    function getDocumentCode(bytes32 _docId) public view returns (string memory) {
+        return documents[_docId].docCode;
     }
 }

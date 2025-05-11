@@ -12,12 +12,13 @@ const getAccounts = async () => {
     return await web3.eth.getAccounts();
 };
 
-const issueDocument = async (issuerAddress, recipientAddress, ipfsHash) => {
+const issueDocument = async (issuerAddress, recipientAddress, ipfsHash, doc_code) => {
     try {
         const instance = await DocumentManagement.deployed();
         const accounts = await getAccounts();
-        const result = await instance.issueDocument(recipientAddress, ipfsHash, {from: issuerAddress});
-        loggerService.info(`Document issued: ${result.logs[0].args.docId}`);
+        // Pass document code to the smart contract
+        const result = await instance.issueDocument(recipientAddress, ipfsHash, doc_code, {from: issuerAddress});
+        loggerService.info(`Document issued: ${result.logs[0].args.docId} with code: ${doc_code}`);
         return result.logs[0].args.docId;
     } catch (error) {
         loggerService.error('Blockchain error in issueDocument:', error);

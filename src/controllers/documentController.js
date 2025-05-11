@@ -8,6 +8,10 @@ import {
     transferOwnership
 } from '../services/blockchainService.js';
 import {ethers} from 'ethers';
+import {DocumentClass} from '../models/documentClassModel.js';
+import {DocumentClassIndex} from "../models/DocumentClassesIndexModel.js";
+import mongoose from 'mongoose';
+
 
 export const issueDocumentController = async (req, res) => {
     const startTime = Date.now();
@@ -30,32 +34,35 @@ export const issueDocumentController = async (req, res) => {
 
         // Extract addresses with validation
         const issuerAddress = req.user.walletAddress;
-        const {recipientAddress} = req.body;
+        const {recipientAddress, doc_code} = req.body;
+
         if (!issuerAddress || !recipientAddress) {
             loggerService.error('Missing issuer or recipient address');
             return res.status(400).json({error: 'Issuer and recipient addresses are required'});
+        }
+
+        if (!doc_code) {
+            loggerService.error('Missing document code');
+            return res.status(400).json({error: 'Document code is required'});
         }
 
         loggerService.info('Preparing to upload file to IPFS');
         const ipfsHash = await addToIPFS(req.file);
         loggerService.info(`File uploaded to IPFS. Hash: ${ipfsHash}`);
 
-        // Generate a unique and traceable docId
-        // const docId = crypto.createHash('sha256')
-        //     .update(`${issuerAddress}${recipientAddress}${ipfsHash}${Date.now()}`)
-        //     .digest('hex');
-
-        loggerService.info('Issuing document on blockchain');
+        loggerService.info(`Issuing document on blockchain with code: ${doc_code}`);
         const docId = await issueDocument(
             issuerAddress,
             recipientAddress,
-            ipfsHash
+            ipfsHash,
+            doc_code
         );
         loggerService.info(`Document issued on blockchain. DocID: ${docId}`);
 
         // Create document record
         const newDocument = new Document({
             docId,
+            doc_code, // Add document code to the model
             issuer: issuerAddress,
             recipient: recipientAddress,
             ipfsHash,
@@ -74,6 +81,7 @@ export const issueDocumentController = async (req, res) => {
 
         res.status(201).json({
             docId,
+            doc_code, // Include document code in response
             ipfsHash,
             fileName: req.file.originalname,
             fileType: req.file.mimetype,
@@ -128,7 +136,6 @@ export const getDocumentController = async (req, res) => {
     }
 };
 
-// Similar logging pattern for other controllers...
 export const verifyDocumentController = async (req, res) => {
     try {
         const {docId} = req.body;
@@ -192,34 +199,17 @@ export const searchIssuedDocumentsController = async (req, res) => {
     loggerService.info('Starting document retrieval process');
 
     try {
-        // Extract issuer and recipient IDs from request body
-        const issuerAddress = req.user.walletAddress;
+        const userWalletAddress = req.user.walletAddress;
         const {recipientAddress} = req.body;
 
-        // Validate that at least one address is provided
-        if (!issuerAddress && !recipientAddress) {
-            loggerService.warn('No search criteria provided');
-            return res.status(400).json({
-                error: 'Please provide either issuer or recipient address'
-            });
+        if (!/^0x[a-fA-F0-9]{40}$/.test(userWalletAddress)) {
+            loggerService.error(`Invalid authenticated user wallet address: ${userWalletAddress}`);
+            return res.status(400).json({error: 'Invalid user wallet address format'});
         }
 
-        // Construct query object based on provided parameters
         const query = {};
 
-        // Add issuer condition if provided
-        if (issuerAddress) {
-            // Validate Ethereum address format
-            if (!/^0x[a-fA-F0-9]{40}$/.test(issuerAddress)) {
-                loggerService.error(`Invalid issuer address format: ${issuerAddress}`);
-                return res.status(400).json({error: 'Invalid issuer address format'});
-            }
-            query.issuer = issuerAddress;
-        }
-
-        // Add recipient condition if provided
         if (recipientAddress) {
-            // Validate Ethereum address format
             if (!/^0x[a-fA-F0-9]{40}$/.test(recipientAddress)) {
                 loggerService.error(`Invalid recipient address format: ${recipientAddress}`);
                 return res.status(400).json({error: 'Invalid recipient address format'});
@@ -227,34 +217,39 @@ export const searchIssuedDocumentsController = async (req, res) => {
             query.recipient = recipientAddress;
         }
 
-        loggerService.info('Searching for documents with query', {
-            issuerAddress: query.issuer,
-            recipientAddress: query.recipient
-        });
+        // If both issuer and recipient were not specified in the request, search for any documents where the user is either
+        if (!recipientAddress) {
+            query.$or = [
+                {issuer: userWalletAddress},
+                {recipient: userWalletAddress}
+            ];
+        } else {
+            query.issuer = userWalletAddress;
+        }
 
-        // Find documents matching the query, selecting only specific fields
+        loggerService.info('Searching for documents with query', query);
+
         const documents = await Document.find(query, {
             docId: 1,
             issuer: 1,
             recipient: 1,
             createdAt: 1,
             updatedAt: 1,
-            _id: 0  // Exclude MongoDB's internal _id
+            doc_code: 1,
+            _id: 0
         });
-
-        // Log search results
-        loggerService.info(`Found ${documents.length} documents matching the criteria`);
 
         const processingTime = Date.now() - startTime;
 
-        // Return documents with processing metadata
+        loggerService.info(`Found ${documents.length} documents matching the criteria`);
+
         res.json({
             documents,
             totalCount: documents.length,
             processingTime,
             searchCriteria: {
-                issuerAddress: query.issuer || 'Not specified',
-                recipientAddress: query.recipient || 'Not specified'
+                issuerAddress: query.issuer || 'Any (user-related)',
+                recipientAddress: query.recipient || 'Any (user-related)'
             }
         });
     } catch (error) {
@@ -263,6 +258,103 @@ export const searchIssuedDocumentsController = async (req, res) => {
         res.status(500).json({
             error: error.message,
             details: error.stack
+        });
+    }
+};
+
+
+export const getDocumentClassesIndexController = async (req, res) => {
+    const startTime = Date.now();
+    loggerService.info('Starting document classes index retrieval process');
+
+    try {
+        // First get the index to determine available sectors
+        const index = await DocumentClassIndex.findOne().lean();
+
+        if (!index) {
+            loggerService.warn('Document classes index not found');
+            return res.status(404).json({
+                success: false,
+                error: 'Document classes index not found'
+            });
+        }
+
+        // Remove mongoose metadata fields
+        const {_id, __v, createdAt, updatedAt, ...sectors} = index;
+        const sectorNames = Object.keys(sectors);
+
+        // Build the aggregation pipeline dynamically based on available sectors
+        const pipeline = [
+            {$match: {_id: index._id}},
+            {
+                $project: {
+                    _id: 0,
+                    __v: 0,
+                    createdAt: 0,
+                    updatedAt: 0
+                }
+            }
+        ];
+
+        // Add $lookup stages for each sector
+        sectorNames.forEach(sectorName => {
+            pipeline.push({
+                $lookup: {
+                    from: 'document_classes',
+                    localField: sectorName,
+                    foreignField: '_id',
+                    as: sectorName
+                }
+            });
+        });
+
+        // Add $addFields to extract the first element from each lookup array
+        pipeline.push({
+            $addFields: Object.fromEntries(
+                sectorNames.map(sectorName => [
+                    sectorName,
+                    {$arrayElemAt: [`$${sectorName}`, 0]}
+                ])
+            )
+        });
+
+        // Execute the aggregation
+        const [result] = await DocumentClassIndex.aggregate(pipeline);
+
+        if (!result) {
+            throw new Error('Failed to aggregate document classes index');
+        }
+
+        // Prepare the response data
+        const sectorsWithData = {};
+        sectorNames.forEach(sectorName => {
+            if (!result[sectorName]) {
+                loggerService.warn(`Referenced document class not found for sector: ${sectorName}`);
+                sectorsWithData[sectorName] = {
+                    error: 'Referenced document class not found',
+                    documentClassId: sectors[sectorName]
+                };
+            } else {
+                sectorsWithData[sectorName] = result[sectorName];
+            }
+        });
+
+        const processingTime = Date.now() - startTime;
+
+        res.json({
+            success: true,
+            sectors: sectorsWithData,
+            totalSectors: sectorNames.length,
+            processingTime: `${processingTime}ms`
+        });
+
+    } catch (error) {
+        loggerService.error(`Document classes index retrieval error: ${error.message}`);
+        loggerService.error(`Full error stack: ${error.stack}`);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to retrieve document classes index',
+            details: error.message
         });
     }
 };

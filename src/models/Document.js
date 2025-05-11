@@ -17,6 +17,20 @@ const DocumentSchema = new mongoose.Schema({
             }
         }
     },
+    doc_code: {
+        type: String,
+        required: true,
+        validate: {
+            validator: function(v) {
+                loggerService.info(`Validating doc_code: ${v}`);
+                return v && v.length > 0;
+            },
+            message: props => {
+                loggerService.warn(`Invalid doc_code: ${props.value}`);
+                return 'Document code must not be empty';
+            }
+        }
+    },
     issuer: {
         type: String,
         required: true,
