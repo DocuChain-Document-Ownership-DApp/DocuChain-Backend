@@ -28,7 +28,7 @@ const UserSchema = new mongoose.Schema(
 
         // Optional Metadata Fields
         profile: {
-            displayName: {
+            name: {
                 type: String,
                 trim: true,
                 maxlength: [50, 'Display name cannot exceed 50 characters'],

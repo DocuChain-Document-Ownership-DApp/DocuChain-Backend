@@ -3,6 +3,8 @@ import { loggerService } from "../services/loggerService.js";
 import { ethers } from 'ethers';
 import { userModel } from '../models/userModel.js';
 import { addToIPFS } from '../services/ipfsService.js';
+import { generateOTPForUser, verifyOTP } from '../services/otpService.js';
+import { emailService } from '../services/emailService.js';
 
 const authMiddleware = new AuthMiddleware();
 
@@ -20,7 +22,7 @@ export const authController = {
             }
 
             // Extract user data from request body
-            const { walletAddress, name, email, phone, uid, dob } = req.body;
+            const { walletAddress, name, email, phone, uid, dob, otp } = req.body;
 
             // Validate wallet address
             if (!ethers.isAddress(walletAddress)) {
@@ -29,12 +31,17 @@ export const authController = {
             }
 
             // Validate other required fields
-            if (!name || !email || !phone || !uid || !dob) {
+            if (!name || !email || !phone || !uid || !dob || !otp) {
                 loggerService.error('Missing required user information');
-                return res.status(400).json({ error: 'All user information fields are required' });
+                return res.status(400).json({ error: 'All user information fields and OTP are required' });
             }
 
-
+            // Verify OTP
+            const isOTPValid = verifyOTP(email, otp);
+            if (!isOTPValid) {
+                loggerService.error('Invalid or expired OTP');
+                return res.status(400).json({ error: 'Invalid or expired OTP' });
+            }
 
             // Upload files to IPFS
             loggerService.info('Uploading files to IPFS');
@@ -141,6 +148,79 @@ export const authController = {
         } catch (error) {
             loggerService.error(`Error refreshing access token. Error: ${error.message}`);
             res.status(401).json({ error: error.message });
+        }
+    },
+
+    // Verify email and send OTP
+    async verifyEmail(req, res) {
+        const startTime = Date.now();
+        const { email } = req.body;
+
+        loggerService.info(`Received request to verify email: ${email}`);
+
+        try {
+            // Validate email
+            if (!email) {
+                loggerService.error('Email is required');
+                return res.status(400).json({ error: 'Email is required' });
+            }
+
+            // Generate OTP
+            const otp = generateOTPForUser(email);
+
+            // Send email with OTP
+            const emailResult = await emailService.sendEmail({
+                to: email,
+                subject: 'Email Verification OTP',
+                text: `Your OTP for email verification is: ${otp}. This OTP is valid for 5 minutes.`,
+                html: `
+                    <h2>Email Verification OTP</h2>
+                    <p>Your OTP for email verification is: <strong>${otp}</strong></p>
+                    <p>This OTP is valid for 5 minutes.</p>
+                    <p>If you didn't request this OTP, please ignore this email.</p>
+                `
+            });
+
+            const processingTime = Date.now() - startTime;
+            loggerService.info(`OTP sent successfully to ${email} in ${processingTime}ms`);
+
+            res.json({
+                messageId: emailResult.messageId,
+                sent: true
+            });
+
+        } catch (error) {
+            const processingTime = Date.now() - startTime;
+            loggerService.error(`Error sending OTP to ${email}: ${error.message}`);
+            loggerService.error(`Stack: ${error.stack}`);
+
+            // Handle specific email errors
+            if (error.message === 'Invalid email address format') {
+                return res.status(400).json({
+                    error: 'Invalid email address format'
+                });
+            } else if (error.message === 'Invalid email domain') {
+                return res.status(400).json({
+                    error: 'Invalid email domain - domain does not exist'
+                });
+            } else if (error.message === 'Email address does not exist') {
+                return res.status(400).json({
+                    error: 'Email address does not exist'
+                });
+            } else if (error.message.includes('Email was not accepted') || 
+                      error.message.includes('Email was rejected')) {
+                return res.status(400).json({
+                    error: 'Email delivery failed'
+                });
+            } else if (error.message.includes('SMTP')) {
+                return res.status(503).json({
+                    error: 'Email service temporarily unavailable'
+                });
+            }
+
+            res.status(500).json({
+                error: 'Failed to send OTP'
+            });
         }
     }
 };

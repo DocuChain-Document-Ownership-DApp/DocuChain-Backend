@@ -36,6 +36,9 @@ router.post('/verify-signature', authController.verifySignature);
 // Refresh token route
 router.post('/refresh-token', authController.refreshToken);
 
+// Verify email route
+router.post('/verify-email', authController.verifyEmail);
+
 // Error handling middleware
 router.use((err, req, res, next) => {
     loggerService.error(`Unhandled auth error: ${err.message}`);
