@@ -5,6 +5,7 @@ import { userModel } from '../models/userModel.js';
 import { addToIPFS } from '../services/ipfsService.js';
 import { generateOTPForUser, verifyOTP } from '../services/otpService.js';
 import { emailService } from '../services/emailService.js';
+import { getEmailTemplate } from '../utils/emailTemplate.js';
 
 const authMiddleware = new AuthMiddleware();
 
@@ -168,17 +169,18 @@ export const authController = {
             // Generate OTP
             const otp = generateOTPForUser(email);
 
+            // Get email template
+            const emailTemplate = getEmailTemplate();
+
             // Send email with OTP
             const emailResult = await emailService.sendEmail({
                 to: email,
                 subject: 'Email Verification OTP',
                 text: `Your OTP for email verification is: ${otp}. This OTP is valid for 5 minutes.`,
-                html: `
-                    <h2>Email Verification OTP</h2>
-                    <p>Your OTP for email verification is: <strong>${otp}</strong></p>
-                    <p>This OTP is valid for 5 minutes.</p>
-                    <p>If you didn't request this OTP, please ignore this email.</p>
-                `
+                html: emailTemplate
+                    .replace('Headline', 'Email Verification OTP')
+                    .replace('Subject', 'Your Verification Code')
+                    .replace('Message-Body', `Your OTP for email verification is: <strong>${otp}</strong>. This OTP is valid for 5 minutes. If you didn't request this OTP, please ignore this email.`)
             });
 
             const processingTime = Date.now() - startTime;

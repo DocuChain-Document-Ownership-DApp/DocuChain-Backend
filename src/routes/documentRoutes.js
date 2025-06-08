@@ -8,8 +8,16 @@ import {
     getDocumentController,
     transferOwnershipController,
     searchIssuedDocumentsController,
-    getDocumentClassesIndexController
+    getDocumentClassesIndexController,
+    generateVerificationOTPController,
+    verifyDocumentWithOTPController
 } from '../controllers/documentController.js';
+import Document from '../models/Document.js';
+import {userModel} from '../models/userModel.js';
+import {emailService} from '../services/emailService.js';
+import {generateOTPForUser, verifyOTP} from '../services/otpService.js';
+import {verifyDocument} from '../services/blockchainService.js';
+import {ethers} from 'ethers';
 
 const router = express.Router();
 const authMiddleware = new AuthMiddleware();
@@ -56,13 +64,21 @@ router.post('/issue',
     issueDocumentController
 );
 
-// Document Verification Route
+// Document Verification Routes
 router.get('/verify',
+    (req, res, next) => {
+        loggerService.info(`Generate OTP for document verification - DocID: ${req.query.docId}`);
+        next();
+    },
+    generateVerificationOTPController
+);
+
+router.post('/verify',
     (req, res, next) => {
         loggerService.info(`Verify document route for DocID: ${req.body.docId}`);
         next();
     },
-    verifyDocumentController
+    verifyDocumentWithOTPController
 );
 
 router.post(

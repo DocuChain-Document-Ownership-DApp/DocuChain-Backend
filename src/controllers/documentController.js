@@ -11,6 +11,11 @@ import {ethers} from 'ethers';
 import {DocumentClass} from '../models/documentClassModel.js';
 import {DocumentClassIndex} from "../models/DocumentClassesIndexModel.js";
 import mongoose from 'mongoose';
+import {generateOTPForUser} from '../services/otpService.js';
+import {emailService} from '../services/emailService.js';
+import {userModel} from '../models/userModel.js';
+import {verifyOTP} from '../services/otpService.js';
+import {documentVerificationService} from '../services/documentVerificationService.js';
 
 
 export const issueDocumentController = async (req, res) => {
@@ -356,5 +361,57 @@ export const getDocumentClassesIndexController = async (req, res) => {
             error: 'Failed to retrieve document classes index',
             details: error.message
         });
+    }
+};
+
+export const generateVerificationOTPController = async (req, res) => {
+    try {
+        const { docId } = req.query;
+        if (!docId) {
+            return res.status(400).json({ error: 'Document ID is required' });
+        }
+
+        const result = await documentVerificationService.generateVerificationOTP(docId);
+        res.json(result);
+    } catch (error) {
+        loggerService.error(`Error generating OTP: ${error.message}`);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const verifyDocumentWithOTPController = async (req, res) => {
+    try {
+        const { docId, otp } = req.body;
+        if (!docId || !otp) {
+            return res.status(400).json({ error: 'Document ID and OTP are required' });
+        }
+
+        const result = await documentVerificationService.verifyDocumentWithOTP(docId, otp);
+        
+        // If verification failed, return just the verification result
+        if (!result.isVerified) {
+            return res.json({ isVerified: false });
+        }
+
+        // For successful verification, send document and owner details
+        const response = {
+            isVerified: true,
+            document: result.document,
+            owner: {
+                ...result.owner,
+                photo: result.owner.photo ? {
+                    data: Buffer.from(result.owner.photo.buffer).toString('base64'),
+                    type: result.owner.photo.type
+                } : null
+            }
+        };
+
+        res.json(response);
+    } catch (error) {
+        loggerService.error(`Document verification error: ${error.message}`);
+        if (error.message === 'Invalid or expired OTP') {
+            return res.status(401).json({ error: error.message });
+        }
+        res.status(500).json({ error: error.message });
     }
 };

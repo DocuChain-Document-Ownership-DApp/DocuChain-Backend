@@ -45,7 +45,7 @@ const startServer = async () => {
         await connectDB();
         loggerService.info('Database connected successfully');
 
-        app.listen(PORT, () => {
+        app.listen(PORT, '0.0.0.0', () => {
             loggerService.info(`Server running on port ${PORT}`);
             loggerService.info('Server startup complete');
         });
